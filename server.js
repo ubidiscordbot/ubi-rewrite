@@ -4,7 +4,7 @@ const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
-const dbx = new Dropbox({ accessToken: 'fB7bjlg_BfAAAAAAAAAABxlCCkw4EGdBB_1CMnebb5TDyswSDAmR1I-6rwrrhwhS' });
+const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN });
 
 
 //Dropbox save functions
