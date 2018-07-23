@@ -9,6 +9,9 @@
   "author": "ubidevs",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^11.3.2"
+    "atob": "^2.1.1",
+    "discord.js": "^11.3.2",
+    "dropbox": "^4.0.9",
+    "isomorphic-fetch": "^2.2.1"
   }
 }
