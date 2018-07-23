@@ -9,6 +9,8 @@ client.on("message", async function(message){
 	if (message.author.id != client.user.id){
 		if (message.content == "hello ubi"){
 			message.channel.send("Hello there.")
+		}else if (message.content == "bye ubi"){
+			message.channel.send("why u leavin?")
 		}
 	}
 })
