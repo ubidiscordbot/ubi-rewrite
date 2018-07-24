@@ -3,7 +3,6 @@ const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
-const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
 const { exec } = require("child_process")
 const firebase = require("firebase")
 
