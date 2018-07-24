@@ -4,8 +4,14 @@ const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
-const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
+const dbx = new Dropbox({ accessToken: process.env.DISCORD_TOKEN});
 const { exec } = require("child_process")
+
+String.prototype.replaceAll = function(search, replacement) {
+    var target = this;
+    return target.replace(new RegExp(search, 'g'), replacement);
+};
+
 //Dropbox save functions
 
 
@@ -104,17 +110,13 @@ client.on("message", async function(message){
 
 			//Allows users to run commands via chat
 
-			let name = "temp" + getRndInteger(1, 10000) + ".js"
-
-			fs.writeFile(name, message.content.slice(5).replace(";", "\n"), (error) => {});
-
-			child = exec("node " +  name)
+			child = exec('node -e "' +  message.content.slice(5).replaceAll('"', "'") + '"'  )
+			
 			child.stdout.on('data', (data) => {
   				message.channel.send("```css\n" + data.toString() + "```");
   				child.kill()
 			});
 
-			fs.unlink(name)
 
 			child.stderr.on('data', (data) => {
 				var nd = data.toString().split("\n")[0]
