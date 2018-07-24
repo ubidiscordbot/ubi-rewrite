@@ -5,7 +5,7 @@ const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
 const dbx = new Dropbox({ accessToken: process.env.DISCORD_TOKEN});
-const { exec } = require("child_process")
+const { spawn } = require("child_process")
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
