@@ -5,6 +5,7 @@ const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
 const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
 const { exec } = require("child_process")
+const firebase = require("firebase")
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -26,151 +27,128 @@ function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min) ) + min;
 }
 
-var writeFileSync = function (path, buffer, callback) {
-    permission = 438; // 0666
-    var fileDescriptor;
 
-    try {
-        fileDescriptor = fs.openSync(path, 'w', permission);
-    } catch (e) {
-        fs.chmodSync(path, permission);
-        fileDescriptor = fs.openSync(path, 'w', permission);
-    }
-
-    if (fileDescriptor) {
-        fs.writeSync(fileDescriptor, buffer, 0, buffer.length, 0);
-        fs.closeSync(fileDescriptor);
-        return callback()
-    }
-}
+const firebase = require("firebase")
+  var config = {
+    apiKey: process.env.FIREBASE_APIKEY, //process.env.FIREBASE_APIKEY
+    authDomain: process.env.FIREBASE_AUTHDOMAIN, //process.env.FIREBASE_AUTHDOMAIN
+    databaseURL: process.env.FIREBASE_DATABASEURL, //process.env.FIREBASE_DATABASEURL
+    storageBucket: process.env.FIREBASE_STORAGEBUCKET //process.env.FIREBASE_STORAGEBUCKET
+  };
 
 
-function load(path, callback){
-	dbx.filesDownload({path: "/" + path})
-	  .then(function(response) {
-	  	writeFileSync(response["name"], response["fileBinary"], function(){
-			try{
-			  	return callback(JSON.parse(fs.readFileSync(path, 'utf8')))
-			} catch(e) {
-			  	return callback("Invalid JSON")
-			}
-		 })
-	 
+  firebase.initializeApp(config);
 
-	  })
-	  .catch(function(error) {
-	    return callback("File not found")
-	  });
-	}
-function save(data, path, callback){
-		dbx.filesDelete({path: "/" + path}).then(function(response){
-			fs.writeFile(path, JSON.stringify(data), (error) => {}).then(function(){
-				var buffer = fs.readFileSync(path)
-				dbx.filesUpload({contents: buffer, path:"/" + path}).then(function(response){
-					return callback(true)
-				})
-				.catch(function(error){
-					return callback(false)
+  // Get a reference to the database service
 
-				});
-			})
-		})
-		.catch(function(error){
-			fs.writeFile(path, JSON.stringify(data), (error) => {});
-			var buffer = fs.readFileSync(path)
-			dbx.filesUpload({contents: buffer, path:"/" + path}).then(function(response){
-				return callback(true)
-			})
-			.catch(function(error){
-				return callback(false)
+firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, process.env.FIREBASE_INTERNALPASSOWRD).then(function(user){
+
+		function save(path, payload, callback){
+  			firebase.database().ref(path).set(payload, function(e){
+  				if (e){
+  					return callback(false);
+  				}else{
+  					return callback(true);
+  				}
+  			});
+
+		}
+		
+		function load(path, callback){
+			firebase.database().ref(path).once('value').then(function(snapshot) {
+			return callback(snapshot.val())
+			  // ...
 			});
+		}
+
+
+		client.on("ready", function(){
+			console.log("ubi online")
+		});
+
+		client.on("message", async function(message){
+			if (message.author.id != client.user.id){
+
+				if (message.content.startsWith("ubi change")){
+
+					save("/global/number/", getRndInteger(1, 100), function(e){
+						
+						if (e){
+
+							message.channel.send("Changed number! Check Firebase.")
+						}else{
+
+							message.channel.send("Error. Something happened.")
+						}
+					})
+
+				}else if (message.content.startsWith("nexec ")){
+
+
+					//Allows users to run commands via chat
+
+					if (!(message.content.toLowerCase().includes("process.env."))){
+						if (!(message.content.toLowerCase().includes("require("))){
+						let jsout = "";
+						let script = parseCommand(message.content.slice(6).replaceAll('"', "'"))
+						child = exec('node -e "' +  script + '"' )
+						message.channel.send("```css\nRunning...```");
+
+						
+						child.stdout.on('data', (data) => {
+			  				jsout += data.toString()
+						});
+
+
+						child.on("close", function(){
+							message.channel.send("```css\n" + jsout + "\nDone!```");
+						})
+
+
+						child.stderr.on('data', (data) => {
+							var nd = data.toString().split("\n")
+						    jsout += data.replace(nd[0], "").replace(nd[1], message.content.slice(6) + "\n")
+						});
+						}else{
+							message.channel.send("```css\nPackage access denied```");
+						}
+					}else{
+						message.channel.send("```css\nError: Enviorment variable access denied```");
+					}
+
+
+				}
+			}
 		})
 
-}
+		function parseCommand(cmd){
+			//To prevent a loop from going on forever
+
+
+			let x = cmd.replaceAll("{", "{<split>").split("<split>")
+			
+			//Adds sleep in loops and async in functions
+			
+			for (i in x){
+
+				if (x[i].includes("while") || x[i].includes("for") || x[i].includes("do")){
+
+					x.splice(parseInt(i) + 1, 0, "await sleep(10);");
+
+				}else if (x[i].includes("function") && !(x[i].includes("async function"))){
+
+					x[i] = x[i].insert(x[i].indexOf("function"), "async ")
+				}
+			}
+
+			return (process.env.NEXECSCRIPT + x.join("") + "}")
+		}
+
+		client.login(process.env.BOT_TOKEN)
+
+
+})
+
 
 //Discord Events
 
-
-client.on("ready", function(){
-	console.log("ubi online")
-});
-
-client.on("message", async function(message){
-	if (message.author.id != client.user.id){
-
-		if (message.content.startsWith("ubi change")){
-
-			save({"data" : getRndInteger(0, 100)}, "number.json", function(e){
-				
-				if (e){
-
-					message.channel.send("Changed number! Check dropbox now.")
-				}else{
-
-					message.channel.send("Error. Something happened.")
-				}
-			})
-
-		}else if (message.content.startsWith("nexec ")){
-
-
-			//Allows users to run commands via chat
-
-			if (!(message.content.toLowerCase().includes("process.env."))){
-				if (!(message.content.toLowerCase().includes("require("))){
-				let jsout = "";
-				let script = parseCommand(message.content.slice(6).replaceAll('"', "'"))
-				child = exec('node -e "' +  script + '"' )
-				message.channel.send("```css\nRunning...```");
-
-				
-				child.stdout.on('data', (data) => {
-	  				jsout += data.toString()
-				});
-
-
-				child.on("close", function(){
-					message.channel.send("```css\n" + jsout + "\nDone!```");
-				})
-
-
-				child.stderr.on('data', (data) => {
-					var nd = data.toString().split("\n")
-				    jsout += data.replace(nd[0], "").replace(nd[1], message.content.slice(6) + "\n")
-				});
-				}else{
-					message.channel.send("```css\nPackage access denied```");
-				}
-			}else{
-				message.channel.send("```css\nError: Enviorment variable access denied```");
-			}
-
-
-		}
-	}
-})
-
-function parseCommand(cmd){
-	//To prevent a loop from going on forever
-
-
-	let x = cmd.replaceAll("{", "{<split>").split("<split>")
-	
-	//Adds sleep in loops and async in functions
-	
-	for (i in x){
-
-		if (x[i].includes("while") || x[i].includes("for") || x[i].includes("do")){
-
-			x.splice(parseInt(i) + 1, 0, "await sleep(10);");
-
-		}else if (x[i].includes("function") && !(x[i].includes("async function"))){
-
-			x[i] = x[i].insert(x[i].indexOf("function"), "async ")
-		}
-	}
-
-	return (process.env.NEXECSCRIPT + x.join("") + "}")
-}
-
-client.login(process.env.BOT_TOKEN)
