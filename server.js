@@ -114,15 +114,16 @@ client.on("message", async function(message){
 			
 			child.stdout.on('data', (data) => {
   				message.channel.send("```css\n" + data.toString() + "```");
-  				child.kill()
 			});
 
 
 			child.stderr.on('data', (data) => {
 				var nd = data.toString().split("\n")[0]
 			    message.channel.send("```css\n" + data.replace(nd, "") + "```");
-  				child.kill()
 			});
+
+
+			setTimeout(function(){ child.kill(); return;}, 2500);
 		}
 	}
 })
