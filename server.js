@@ -4,10 +4,11 @@ const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
-const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN });
-
-
+const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
+const { exec } = require("child_process")
 //Dropbox save functions
+
+
 
 function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min) ) + min;
@@ -51,15 +52,16 @@ function load(path, callback){
 	}
 function save(data, path, callback){
 		dbx.filesDelete({path: "/" + path}).then(function(response){
-			fs.writeFile(path, JSON.stringify(data), (error) => {});
-			var buffer = fs.readFileSync(path)
-			dbx.filesUpload({contents: buffer, path:"/" + path}).then(function(response){
-				return callback(true)
-			})
-			.catch(function(error){
-				return callback(false)
+			fs.writeFile(path, JSON.stringify(data), (error) => {}).then(function(){
+				var buffer = fs.readFileSync(path)
+				dbx.filesUpload({contents: buffer, path:"/" + path}).then(function(response){
+					return callback(true)
+				})
+				.catch(function(error){
+					return callback(false)
 
-			});
+				});
+			})
 		})
 		.catch(function(error){
 			fs.writeFile(path, JSON.stringify(data), (error) => {});
@@ -83,14 +85,42 @@ client.on("ready", function(){
 
 client.on("message", async function(message){
 	if (message.author.id != client.user.id){
-		if (message.content == "ubi change"){
+
+		if (message.content.startsWith("ubi change")){
+
 			save({"data" : getRndInteger(0, 100)}, "number.json", function(e){
+				
 				if (e){
+
 					message.channel.send("Changed number! Check dropbox now.")
 				}else{
+
 					message.channel.send("Error. Something happened.")
 				}
 			})
+
+		}else if (message.content.startsWith("exec")){
+
+
+			//Allows users to run commands via chat
+
+			let name = "temp" + getRndInteger(1, 10000) + ".js"
+
+			fs.writeFile(name, message.content.slice(5).replace(";", "\n"), (error) => {});
+
+			child = exec("node " +  name)
+			child.stdout.on('data', (data) => {
+  				message.channel.send("```css\n" + data.toString() + "```");
+  				child.kill()
+			});
+
+			fs.unlink(name)
+
+			child.stderr.on('data', (data) => {
+				var nd = data.toString().split("\n")[0]
+			    message.channel.send("```css\n" + data.replace(nd, "") + "```");
+  				child.kill()
+			});
 		}
 	}
 })
