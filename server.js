@@ -1,11 +1,10 @@
 require('isomorphic-fetch');
-const atob = require("atob");
 const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
-const dbx = new Dropbox({ accessToken: process.env.DISCORD_TOKEN});
-const { spawn } = require("child_process")
+const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
+const { exec } = require("child_process")
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -13,6 +12,13 @@ String.prototype.replaceAll = function(search, replacement) {
 };
 
 //Dropbox save functions
+
+String.prototype.insert = function (index, string) {
+  if (index > 0)
+    return this.substring(0, index) + string + this.substring(index, this.length);
+  else
+    return string + this;
+};
 
 
 
@@ -105,32 +111,66 @@ client.on("message", async function(message){
 				}
 			})
 
-		}else if (message.content.startsWith("exec")){
+		}else if (message.content.startsWith("nexec ")){
 
 
 			//Allows users to run commands via chat
 
-			child = spawn('node',[ "-e" ,'"' +  message.content.slice(5).replaceAll('"', "'") + '"' ])
-			
-			child.stdout.on('data', (data) => {
-  				message.channel.send("```css\n" + data.toString() + "```");
-			});
+			if (!(message.content.toLowerCase().includes("process.env."))){
+				if (!(message.content.toLowerCase().includes("require("))){
+				let jsout = "";
+				let script = parseCommand(message.content.slice(6).replaceAll('"', "'"))
+				child = exec('node -e "' +  script + '"' )
+				message.channel.send("```css\nRunning...```");
+
+				
+				child.stdout.on('data', (data) => {
+	  				jsout += data.toString()
+				});
 
 
-			child.on("close", function(){
-				message.channel.send("```css\nProcess timed out```");
-			})
+				child.on("close", function(){
+					message.channel.send("```css\n" + jsout + "\nDone!```");
+				})
 
 
-			child.stderr.on('data', (data) => {
-				var nd = data.toString().split("\n")[0]
-			    message.channel.send("```css\n" + data.replace(nd, "") + "```");
-			});
+				child.stderr.on('data', (data) => {
+					var nd = data.toString().split("\n")
+				    jsout += data.replace(nd[0], "").replace(nd[1], message.content.slice(6) + "\n")
+				});
+				}else{
+					message.channel.send("```css\nPackage access denied```");
+				}
+			}else{
+				message.channel.send("```css\nError: Enviorment variable access denied```");
+			}
 
 
-			setTimeout(function(){ child.kill();}, 10);
 		}
 	}
 })
 
-client.login(process.env.BOT_TOKEN);
+function parseCommand(cmd){
+	//To prevent a loop from going on forever
+
+
+	let x = cmd.replaceAll("{", "{<split>").split("<split>")
+	
+	//Adds sleep in loops and async in functions
+	
+	for (i in x){
+
+		if (x[i].includes("while") || x[i].includes("for") || x[i].includes("do")){
+
+			x.splice(parseInt(i) + 1, 0, "await sleep(10);");
+
+		}else if (x[i].includes("function") && !(x[i].includes("async function"))){
+
+			x[i] = x[i].insert(x[i].indexOf("function"), "async ")
+		}
+	}
+
+	return (process.env.NEXECSCRIPT + x.join("") + "}")
+}
+
+client.login(process.env.BOT_TOKEN)
