@@ -41,7 +41,7 @@ const firebase = require("firebase")
 
   // Get a reference to the database service
 
-firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, process.env.FIREBASE_INTERNALPASSOWRD).then(function(user){
+firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, process.env.FIREBASE_INTERNALPASSWORD).then(function(user){
 
 		function save(path, payload, callback){
   			firebase.database().ref(path).set(payload, function(e){
