@@ -110,11 +110,16 @@ client.on("message", async function(message){
 
 			//Allows users to run commands via chat
 
-			child = exec('node -e "setTimeout(function(){ process.exit(0);}, 1500);' +  message.content.slice(5).replaceAll('"', "'") + '"'  )
+			child = spawn('node',[ "-e" ,'"' +  message.content.slice(5).replaceAll('"', "'") + '"' ])
 			
 			child.stdout.on('data', (data) => {
   				message.channel.send("```css\n" + data.toString() + "```");
 			});
+
+
+			child.on("close", function(){
+				message.channel.send("```css\nProcess timed out```");
+			})
 
 
 			child.stderr.on('data', (data) => {
@@ -123,6 +128,7 @@ client.on("message", async function(message){
 			});
 
 
+			setTimeout(function(){ child.kill();}, 10);
 		}
 	}
 })
