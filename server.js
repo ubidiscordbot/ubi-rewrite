@@ -1,10 +1,13 @@
+require('dotenv').config({path: "variables.env"})
 require('isomorphic-fetch');
 const fs = require("fs");
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const Dropbox = require('dropbox').Dropbox;
+const dbx = new Dropbox({ accessToken: process.env.DROPBOX_TOKEN});
 const { exec } = require("child_process")
 const firebase = require("firebase")
+require('http').createServer().listen(3000)
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
@@ -27,7 +30,6 @@ function getRndInteger(min, max) {
 }
 
 
-const firebase = require("firebase")
   var config = {
     apiKey: process.env.FIREBASE_APIKEY, //process.env.FIREBASE_APIKEY
     authDomain: process.env.FIREBASE_AUTHDOMAIN, //process.env.FIREBASE_AUTHDOMAIN
@@ -62,13 +64,13 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 
 
 		client.on("ready", function(){
-			console.log("ubi online")
+			console.log(`Logged in as ${client.user.tag}`)
 		});
 
 		client.on("message", async function(message){
 			if (message.author.id != client.user.id){
 
-				if (message.content.startsWith("ubi change")){
+				if (message.content.startsWith("!change")){
 
 					save("/global/number/", getRndInteger(1, 100), function(e){
 						
@@ -81,7 +83,10 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 						}
 					})
 
-				}else if (message.content.startsWith("nexec ")){
+				}else if (message.content === '!avatar') {
+    				message.reply(message.author.avatarURL);
+
+				}else if (message.content.startsWith("!nexec ")){
 
 
 					//Allows users to run commands via chat
