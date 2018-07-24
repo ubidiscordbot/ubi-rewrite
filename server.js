@@ -110,7 +110,7 @@ client.on("message", async function(message){
 
 			//Allows users to run commands via chat
 
-			child = exec('node -e "' +  message.content.slice(5).replaceAll('"', "'") + ' setTimeout(function(){ process.exit(1)}, 1500);"'  )
+			child = exec('node -e "' +  message.content.slice(5).replaceAll('"', "'") + ' setTimeout(function(){ process.exit(0);}, 1500);"'  )
 			
 			child.stdout.on('data', (data) => {
   				message.channel.send("```css\n" + data.toString() + "```");
