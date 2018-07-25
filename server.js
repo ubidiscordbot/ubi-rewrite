@@ -16,13 +16,31 @@ const prefix = "."
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const firebase = require("firebase")
-require('http').createServer().listen(3000)
+
+const http = require('http').createServer().listen(3000)
 
 String.prototype.replaceAll = function(search, replacement) {
     var target = this;
     return target.replace(new RegExp(search, 'g'), replacement);
 };
 
+if (!String.prototype.splice) {
+    /**
+     * {JSDoc}
+     *
+     * The splice() method changes the content of a string by removing a range of
+     * characters and/or adding new characters.
+     *
+     * @this {String}
+     * @param {number} start Index at which to start changing the string.
+     * @param {number} delCount An integer indicating the number of old chars to remove.
+     * @param {string} newSubStr The String that is spliced in.
+     * @return {string} A new string with the spliced substring.
+     */
+    String.prototype.splice = function(start, delCount, newSubStr) {
+        return this.slice(0, start) + newSubStr + this.slice(start + Math.abs(delCount));
+    };
+}
 
 String.prototype.insert = function (index, string) {
   if (index > 0)
@@ -79,9 +97,9 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 
 			if (message.author.id != client.user.id){
 				if(message.content.startsWith(prefix)){
-				let command = message.content.replace(".", "").split(" ")
+				let command = message.content.replace(prefix, "").split(" ")
 				
-				let command2 = message.content.replace(".", "").split(" ")
+				let command2 = message.content.replace(prefix, "").split(" ")
 
 				if (modules[command[0]]["commands"].includes(command[1]) || modules[command[0]]["commands"][0] == "*"){
 
