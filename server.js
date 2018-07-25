@@ -111,8 +111,16 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 
 						child.stderr.on('data', (data) => {
 							var nd = data.toString().split("\n")
-						    jsout += data.replace(nd[0], "").replace(nd[1], message.content.slice(6) + "\n")
+
+							for (let i in nd){
+								if (nd[i].startsWith(process.env.NEXECSCRIPT)){
+									nd[i] = message.content.slice(7);
+								}
+							}
+
+						    jsout += nd.join("") + "\n"
 						});
+
 						}else{
 							message.channel.send("```css\nPackage access denied```");
 						}
@@ -155,4 +163,3 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 
 
 //Discord Events
-
