@@ -2,6 +2,7 @@ require('dotenv').config({path: "variables.env"})
 require('isomorphic-fetch');
 const fs = require("fs");
 let modules = JSON.parse(fs.readFileSync('lib/modules.json', 'utf8'));
+let botConfig = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 let moduleHolder = [[], []]
 
 
@@ -11,8 +12,7 @@ for (const [ key, value ] of Object.entries(modules)) {
 	moduleHolder[value["name"]] = require("./lib/" + value["name"] + ".js")
 }
 
-const prefix = "."
-
+const prefix = botConfig["prefix"]
 const Discord = require("discord.js");
 const client = new Discord.Client();
 const firebase = require("firebase")
@@ -24,23 +24,6 @@ String.prototype.replaceAll = function(search, replacement) {
     return target.replace(new RegExp(search, 'g'), replacement);
 };
 
-if (!String.prototype.splice) {
-    /**
-     * {JSDoc}
-     *
-     * The splice() method changes the content of a string by removing a range of
-     * characters and/or adding new characters.
-     *
-     * @this {String}
-     * @param {number} start Index at which to start changing the string.
-     * @param {number} delCount An integer indicating the number of old chars to remove.
-     * @param {string} newSubStr The String that is spliced in.
-     * @return {string} A new string with the spliced substring.
-     */
-    String.prototype.splice = function(start, delCount, newSubStr) {
-        return this.slice(0, start) + newSubStr + this.slice(start + Math.abs(delCount));
-    };
-}
 
 String.prototype.insert = function (index, string) {
   if (index > 0)
@@ -52,6 +35,9 @@ String.prototype.insert = function (index, string) {
 function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min) ) + min;
 }
+
+
+/*Firebase*/
 
 const config = {
     apiKey: process.env.FIREBASE_APIKEY, //process.env.FIREBASE_APIKEY
@@ -110,9 +96,11 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 						moduleHolder[command2[0]].main(command.join(" "), command2[1], message)
 					}else{
 
-						command.shift()
+						if ((command[0]) == "help"){
+							command.shift()
 
-						moduleHolder[command2[0]].main(command.join(" "), command2[0], message)
+							moduleHolder[command2[0]].main(command.join(" "), command2[0], message, prefix)
+						}
 
 					}
 				}
