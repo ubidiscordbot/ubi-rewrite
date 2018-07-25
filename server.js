@@ -94,7 +94,7 @@ firebase.auth().signInWithEmailAndPassword(process.env.FIREBASE_INTERNALEMAIL, p
 					if (!(message.content.toLowerCase().includes("process.env."))){
 						if (!(message.content.toLowerCase().includes("require("))){
 						let jsout = "";
-						let script = parseCommand(message.content.slice(6).replaceAll('"', "'"))
+						let script = parseCommand(message.content.slice(7).replaceAll('"', "'"))
 						child = exec('node -e "' +  script + '"' )
 						message.channel.send("```css\nRunning...```");
 
